@@ -1,0 +1,5 @@
+*.log
+*.json
+*.bit
+*.bin
+*.config
