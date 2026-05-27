@@ -53,26 +53,8 @@ module top (
             clk_div <= '0;
         else
            clk_div <= clk_div+ 1'd1;
-
-/*	always_ff@(posedge clk25 or posedge rst)
-            begin
-                 if(rst)
-                   begin
-                       result_norm <= '0;
-                       pwm_norm <= '0;
-
-                   end
-                 else
-		 begin
-	            result_norm <= result;	
-	   	    if (ready_dev)
-		        result <= result_f;
-		    pwm_norm <= pwm_out>>8;
-
-                 end          
-	    end*/
-
-       always_ff @ (posedge cmd_clk or posedge rst)
+       
+   always_ff @ (posedge cmd_clk or posedge rst)
         if (rst)
             pwm_top <=8'h80;
         else begin
@@ -97,15 +79,6 @@ module top (
         end
 
 
-/*
-  always_ff @ (posedge clk25 or posedge rst)
-        if (rst)
-            pid_norm <= '0;
-        else begin
-            if (pid_isp [15] == 1)
-               pid_norm <= '0;
-            else
-		pid_norm <= (pid_isp << 4;*/
 		  
 function [7:0] bin2ascii (input [3:0] bin);
 if(bin < 4'ha)
@@ -134,7 +107,6 @@ reg [7:0] message [41];
                  if(rst)
                    begin
 		     result<='0;
-		    // valid_PID <= '0;
 
                    end
                  else
@@ -142,11 +114,7 @@ reg [7:0] message [41];
 		    if (ready_dev)
 		    	begin
                             result <= result_f;
-			  //  valid_PID <= '1;
-                          //  remainder<=remainder_f;
 		        end
-		 /*  if (valid_PID)
-		       valid_PID <= '0;*/
 		  end
 	    end
 
@@ -234,8 +202,6 @@ reg [7:0] message [41];
                     message[33] <= bin2ascii(error_isp[3:0]);
                     message[34] <= " ";
 		    
-                   // message[35] <= bin2ascii(pid_norm[15:12]);
-                   // message[36] <= bin2ascii(pid_norm[11:8]);
                     message[37] <= bin2ascii(pid_norm[7:4]);
                     message[38] <= bin2ascii(pid_norm[3:0]);
 		    
@@ -260,14 +226,6 @@ pid_controller2 pid_control(
 	);
 
 
-/* freq_counter freq_counter_1(
-                .clk(clk25),
-                .rst(rst),
-                .strob(key0_strob_front),
-                .freq_out(freq_out),
-		.ready(ready_freq)
-        );*/
-
         strobe_gen key_gen1(
                 .clk(clk25),
                 .rst(rst),
@@ -275,16 +233,6 @@ pid_controller2 pid_control(
                 .strob_front(key0_strob_front),
                 .strob_back(key0_strob_back)
         );
-
-      /*  strobe_gen pid_gen1(
-                .clk(clk25),
-                .rst(rst),
-                .signal_input(ready_dev),
-                .strob_front(pid_strob_front),
-                .strob_back()
-        );
-*/
-
 
       time_counter time_counter_1(
                 .clk(clk25),
@@ -307,24 +255,8 @@ pid_controller2 pid_control(
      assign gpio [11]  = '0;    // MOT_FR_PWM2
      assign gpio [14]  = '0;    // MOT_BR_PWM1
      assign gpio [15]  = '0;    // MOT_BR_PWM2
-
-    /* assign led[0] = time_out [0];
-     assign led[1] = time_out [1];
-     assign led[2] = time_out [2];
-    assign led[3] = time_out [3];
-*/
-
-   /* display i_display(
-                .clk(clk25),
-                .rst(rst),
-                .data(display_out),
-                .sio_clk(gpio[1]),
-                .sio_stb(gpio[12]),
-                .sio_data(gpio[11])
-        );
-*/
-
-    divfunc #(.XLEN(32),.STAGE_LIST(32'hFFFFFFFF)) divfunc_1(
+    
+     divfunc #(.XLEN(32),.STAGE_LIST(32'hFFFFFFFF)) divfunc_1(
 	    .clk(clk25),
 	    .rst(rst),
 	    .a(32'd6375000),
@@ -339,7 +271,6 @@ pid_controller2 pid_control(
                 .clk(clk25),
                 .rst(rst),
                 .duty(pid_norm),
-		//.duty(8'h80),
 		.pwm_out(pwm_out_fl)
         );
 
@@ -347,21 +278,11 @@ pid_controller2 pid_control(
                 .clk(clk25),
                 .rst(rst),
                 .duty(pwm_top),
-		//.duty(8'h80),
 		.pwm_out(pwm_out_bl)
         );
 
 
 
-    /*	
-    wire [7:0] test_data[7];
-    assign test_data[0] = "H";
-    assign test_data[1] = "e";
-    assign test_data[2] = "l";
-    assign test_data[3] = "l";
-    assign test_data[4] = "o";
-    assign test_data[5] = "\r";
-    assign test_data[6] = "\n";*/
     wire valid_ready;
     wire [7:0] data;
     reg  [7:0] ptr;
