@@ -7,7 +7,7 @@ module pwm (
 
     localparam w_cnt1 = $clog2(25*1000*1000);
     reg [w_cnt1-1:0] clk_div;
-    reg pwm_clk = clk_div [10];
+    reg pwm_clk = clk_div [7];
     reg [7:0] cnt;
     
 
@@ -28,7 +28,9 @@ module pwm (
 		if (cnt < duty)
 		   pwm_out <= '1;
                 if (cnt > duty)
-	           pwm_out <= '0;		
+	           pwm_out <= '0;
+                if (cnt == duty)
+	           pwm_out <= '1;		
             end
     end
 

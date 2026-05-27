@@ -3,12 +3,11 @@ module top (
         input   logic [3:0]     key,
         inout   logic [15:0]     gpio,
         output  logic [3:0]     led,
-
+	output logic uart_debug_txd
 );
-        localparam izm = 8'd1; 
+        localparam izm = 8'd16; 
         wire rst;
         assign rst = key[3];
-        reg[15:0]  pwm_out;
 	reg [15:0] pwm_top;
         reg [31:0] remainder_f;
         reg [15:0] result;
@@ -22,7 +21,8 @@ module top (
 	reg [15:0] integral_isp;
 	reg [15:0] error_isp;
 	reg [7:0] pid_norm;
-	reg pwm_out;
+	reg pwm_out_fl;
+	reg pwm_out_bl;
 	
 	
 
@@ -72,9 +72,9 @@ module top (
                  end          
 	    end*/
 
-    /*   always_ff @ (posedge cmd_clk or posedge rst)
+       always_ff @ (posedge cmd_clk or posedge rst)
         if (rst)
-            pwm_top <='0;
+            pwm_top <=8'h80;
         else begin
            case (cmd)
                 2'b10: begin
@@ -95,7 +95,7 @@ module top (
 
             endcase;
         end
-*/
+
 
 /*
   always_ff @ (posedge clk25 or posedge rst)
@@ -106,7 +106,14 @@ module top (
                pid_norm <= '0;
             else
 		pid_norm <= (pid_isp << 4;*/
-		   
+		  
+function [7:0] bin2ascii (input [3:0] bin);
+if(bin < 4'ha)
+bin2ascii = {4'h3, bin };
+else 	
+bin2ascii = {4'h4, 4'(bin-9)};
+endfunction
+
 function [7:0] saturate255 (input signed [15:0] raw);
 if(raw > $signed('d255))
 saturate255 = 'd255;
@@ -119,31 +126,21 @@ endfunction
 assign pid_norm = saturate255(pid_isp);
 
 
-
-
-
+reg [7:0] message [41];
 
 
 	 always_ff@(posedge clk25 or posedge rst)
             begin
                  if(rst)
                    begin
-		     valid_time <= '0;
 		     result<='0;
-                     time_del <= '0;
 		    // valid_PID <= '0;
+
                    end
                  else
 	          begin  
-                    if ((time_out > 32'd0) && (~ready_dev) && (time_del == 32'd0))
-		       begin
-                       valid_time <= '1;
-		       time_del<=time_out;
-	       	       end	
 		    if (ready_dev)
 		    	begin
-			    time_del <= 32'd0;
-			    valid_time <= '0;
                             result <= result_f;
 			  //  valid_PID <= '1;
                           //  remainder<=remainder_f;
@@ -151,8 +148,100 @@ assign pid_norm = saturate255(pid_isp);
 		 /*  if (valid_PID)
 		       valid_PID <= '0;*/
 		  end
+	    end
 
-	    end		 
+
+     always_ff@(posedge clk25 or posedge rst)
+     if(rst)
+     begin
+                    message[0] <= "T";
+                    message[1] <= "E";
+                    message[2] <= "S";
+                    message[3] <= "T";
+                    message[4] <= ":";
+                    message[5] <= " ";
+                    message[6] <= "X";
+                    message[7] <= "X";
+                    message[8] <= "X";
+                    message[9] <= "X";
+                    message[10] <= "X";
+                    message[11] <= "X";
+                    message[12] <= "X";
+                    message[13] <= "X";
+                    message[14] <= " ";
+                    message[15] <= "X";
+                    message[16] <= "X";
+                    message[17] <= "X";
+                    message[18] <= "X";
+                    message[19] <= " ";
+                    message[20] <= "X";
+                    message[21] <= "X";
+                    message[22] <= "X";
+                    message[23] <= "X";
+                    message[24] <= " ";
+                    message[25] <= "X";
+                    message[26] <= "X";
+                    message[27] <= "X";
+                    message[28] <= "X";
+                    message[29] <= " ";
+                    message[30] <= "X";
+                    message[31] <= "X";
+                    message[32] <= "X";
+                    message[33] <= "X";
+                    message[34] <= " ";
+                    message[35] <= "X";
+                    message[36] <= "X";
+                    message[37] <= "X";
+                    message[38] <= "X";
+                    message[39] <= "\n";
+                    message[40] <= "\r";
+	    end
+     else
+     begin
+	if(ready_dev)
+	begin
+                    message[6] <= bin2ascii(time_out[31:28]);
+                    message[7] <= bin2ascii(time_out[27:24]);
+                    message[8] <= bin2ascii(time_out[23:20]);
+                    message[9] <= bin2ascii(time_out[19:16]);
+                    message[10] <= bin2ascii(time_out[15:12]);
+                    message[11] <= bin2ascii(time_out[11:8]);
+                    message[12] <= bin2ascii(time_out[7:4]);
+                    message[13] <= bin2ascii(time_out[3:0]);
+
+                    message[14] <= " ";
+                    message[15] <= bin2ascii(pwm_top[15:12]);
+                    message[16] <= bin2ascii(pwm_top[11:8]);
+                    message[17] <= bin2ascii(pwm_top[7:4]);
+                    message[18] <= bin2ascii(pwm_top[3:0]);
+
+                    message[19] <= " ";
+                    message[20] <= bin2ascii(result[15:12]);
+                    message[21] <= bin2ascii(result[11:8]);
+                    message[22] <= bin2ascii(result[7:4]);
+                    message[23] <= bin2ascii(result[3:0]);
+                    message[24] <= " ";
+
+                    message[25] <= bin2ascii(pid_isp[15:12]);
+                    message[26] <= bin2ascii(pid_isp[11:8]);
+                    message[27] <= bin2ascii(pid_isp[7:4]);
+                    message[28] <= bin2ascii(pid_isp[3:0]);
+		    message[29] <= " ";
+
+                    message[30] <= bin2ascii(error_isp[15:12]);
+                    message[31] <= bin2ascii(error_isp[11:8]);
+                    message[32] <= bin2ascii(error_isp[7:4]);
+                    message[33] <= bin2ascii(error_isp[3:0]);
+                    message[34] <= " ";
+		    
+                   // message[35] <= bin2ascii(pid_norm[15:12]);
+                   // message[36] <= bin2ascii(pid_norm[11:8]);
+                    message[37] <= bin2ascii(pid_norm[7:4]);
+                    message[38] <= bin2ascii(pid_norm[3:0]);
+		    
+
+	end
+     end
 
 
 pid_controller2 pid_control(
@@ -162,8 +251,8 @@ pid_controller2 pid_control(
         .feedback(result),
         .Kp(16'd1),
         .Ki(16'd1),
-        .Kd(16'd1),
-        .valid(pid_strob_front),
+        .Kd(16'd2),
+        .valid(ready_dev),
         .control_signal(pid_isp),
         .prev_error(error_isp),
         .integral(integral_isp),
@@ -187,36 +276,37 @@ pid_controller2 pid_control(
                 .strob_back(key0_strob_back)
         );
 
-        strobe_gen pid_gen1(
+      /*  strobe_gen pid_gen1(
                 .clk(clk25),
                 .rst(rst),
                 .signal_input(ready_dev),
                 .strob_front(pid_strob_front),
                 .strob_back()
         );
-
+*/
 
 
       time_counter time_counter_1(
                 .clk(clk25),
                 .rst(rst),
                 .strob(key0_strob_front),
-                .period(time_out)
+                .period(time_out),
+		.ready(valid_time)
         );
 
-     assign led[0] = pwm_out;
+     assign led[0] = pwm_out_fl;
      assign led[1] = '0;
      assign led[2] = '0;
      assign led[3] = ready_dev;
-     assign gpio [6] = key [0];
-     assign gpio [7] = pwm_out;
-     assign gpio [9]  = '0;
-     assign gpio [12]  = '0;
-     assign gpio [13]  = '0;
-     assign gpio [10]  = '0;
-     assign gpio [11]  = '0;
-     assign gpio [14]  = '0;
-     assign gpio [15]  = '0;
+     assign gpio [6] = '1; // MOT_ALL_EN
+     assign gpio [7] = pwm_out_fl; // MOT_FL_PWM1
+     assign gpio [9]  = '0;     // MOT_FL_PWM2
+     assign gpio [12]  = pwm_out_bl;    // MOT_BL_PWM1
+     assign gpio [13]  = '0;    // MOT_BL_PWM2
+     assign gpio [10]  = '0;    // MOT_FR_PWM1
+     assign gpio [11]  = '0;    // MOT_FR_PWM2
+     assign gpio [14]  = '0;    // MOT_BR_PWM1
+     assign gpio [15]  = '0;    // MOT_BR_PWM2
 
     /* assign led[0] = time_out [0];
      assign led[1] = time_out [1];
@@ -224,7 +314,7 @@ pid_controller2 pid_control(
     assign led[3] = time_out [3];
 */
 
-    display i_display(
+   /* display i_display(
                 .clk(clk25),
                 .rst(rst),
                 .data(display_out),
@@ -232,25 +322,68 @@ pid_controller2 pid_control(
                 .sio_stb(gpio[12]),
                 .sio_data(gpio[11])
         );
-
+*/
 
     divfunc #(.XLEN(32),.STAGE_LIST(32'hFFFFFFFF)) divfunc_1(
 	    .clk(clk25),
 	    .rst(rst),
 	    .a(32'd6375000),
-	    .b(time_del),
+	    .b(time_out),
             .vld(valid_time),
 	    .quo (result_f),
 	    .rem(remainder_f),
 	    .ack(ready_dev)
 	    );
 
-  pwm pwm_1(
+  pwm pwm_fl(
                 .clk(clk25),
                 .rst(rst),
                 .duty(pid_norm),
-		.pwm_out(pwm_out)
+		//.duty(8'h80),
+		.pwm_out(pwm_out_fl)
         );
+
+  pwm pwm_bl(
+                .clk(clk25),
+                .rst(rst),
+                .duty(pwm_top),
+		//.duty(8'h80),
+		.pwm_out(pwm_out_bl)
+        );
+
+
+
+    /*	
+    wire [7:0] test_data[7];
+    assign test_data[0] = "H";
+    assign test_data[1] = "e";
+    assign test_data[2] = "l";
+    assign test_data[3] = "l";
+    assign test_data[4] = "o";
+    assign test_data[5] = "\r";
+    assign test_data[6] = "\n";*/
+    wire valid_ready;
+    wire [7:0] data;
+    reg  [7:0] ptr;
+
+    uart_transmitter # (.clk_mhz(25), .baud_rate(115200), .data_length(8), .need_parity(0), .stop_bits(1))
+    i_uart_tx (.clk(clk25), .rst(rst), .data(data), .valid(valid_ready), .ready(valid_ready), .tx(uart_debug_txd));
+
+    assign data = message[ptr];
+
+    always @ (posedge clk25 or posedge rst)
+    begin
+        if(rst)
+                ptr <= 0;
+        else
+        if(valid_ready)
+        begin
+                ptr <= ptr + 'd1;
+                if(ptr == 'd40)
+                        ptr <= 'd0;
+        end
+    end
+
 
 endmodule
 

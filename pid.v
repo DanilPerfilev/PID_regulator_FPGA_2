@@ -122,19 +122,19 @@ module pid_controller2(
 			// PID Calculation
 			integral <= integral + (Ki * (setpoint - feedback));
 
-			if (integral > $signed(16'h0fff))
-				integral <= 16'h0fff;
+			if (integral > $signed(16'h01ff))
+				integral <= 16'h01ff;
 
-			if (integral < -$signed(16'h0fff))
-				integral <= -(16'h0fff);
+			if (integral < -$signed(16'h01ff))
+				integral <= -(16'h01ff);
 
 			derivative <= Kd * ((setpoint - feedback) - prev_error);
 
-			if (derivative > $signed(16'h0fff))
-				derivative <= 16'h0fff;
+			if (derivative > $signed(16'h01ff))
+				derivative <= 16'h01ff;
 
-			if (derivative < -$signed(16'h0fff))
-				derivative <= -(16'h0fff);
+			if (derivative < -$signed(16'h01ff))
+				derivative <= -(16'h01ff);
 
 			// Calculate control signal
 			control_signal = (Kp * (setpoint - feedback)) + integral + derivative; 
@@ -142,11 +142,11 @@ module pid_controller2(
 			// Update previous error term to feed it for derrivative term.
 			prev_error <= (setpoint - feedback);
 
-			if (prev_error > $signed(16'h0fff))
-				prev_error <= 16'h0fff;
+			if (prev_error > $signed(16'h01ff))
+				prev_error <= 16'h01ff;
 
-			if (prev_error < -$signed(16'h0fff))
-				prev_error <= -(16'h0fff);
+			if (prev_error < -$signed(16'h01ff))
+				prev_error <= -(16'h01ff);
 
 			$display("PID: integral = %d, derivative = %d, control_signal = %d, prev_error = %d",
 				integral, derivative, control_signal, prev_error);

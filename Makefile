@@ -8,6 +8,7 @@ VERILOG +=divfunc.v
 VERILOG += freq_counter.sv
 VERILOG += pid.v
 VERILOG += pwm_signal.sv
+VERILOG += uart_transmitter.sv
 
 INC = ./
 LPF = karnix_cabga256.lpf
@@ -104,5 +105,8 @@ check:
 .PHONY: clean
 clean:
 	rm -f *.bit *.txt *.log *.json .blif *.out *.svg *.dot *.pdf *out.config
+
+term:
+	minicom -D /dev/ttyUSB1 -b 115200
 
 
